@@ -2,10 +2,26 @@
 
 Interactive **3D pre-engineered metal building (PEMB) erection sequence** for **Stamps Steel Buildings**.
 
-**Repo:** [SpiderForce-Star/Isometric-PEMB-Video-Build](https://github.com/SpiderForce-Star/Isometric-PEMB-Video-Build)  
-**Website (host page):** [Stamps Steel · Erection](https://SpiderForce-Star.github.io/Stamps-Steel/erection.html)
+| | |
+|--|--|
+| **This repo (3D code)** | [SpiderForce-Star/Isometric-PEMB-Video-Build](https://github.com/SpiderForce-Star/Isometric-PEMB-Video-Build) |
+| **Marketing website** | [SpiderForce-Star/Stamps-Steel](https://github.com/SpiderForce-Star/Stamps-Steel) |
+| **Live erection page** | [erection.html#pemb-3d](https://SpiderForce-Star.github.io/Stamps-Steel/erection.html#pemb-3d) |
+| **Live 3D player** | [pemb-3d.html](https://SpiderForce-Star.github.io/Stamps-Steel/pemb-3d.html) |
 
-This project is intentionally **separate** from the static Stamps Steel marketing site so 3D/animation work can iterate without blocking HTML page edits.
+## Why a separate repo?
+
+3D/animation iteration stays here so it **does not interrupt** static website construction (HTML, SEO, quote form).  
+The Stamps Steel **Erection** tab embeds the player via iframe; the website only holds a published copy of the standalone player for GitHub Pages hosting.
+
+```
+Isometric-PEMB-Video-Build     →  source of truth (edit 3D here)
+        │
+        │  copy standalone index.html / embed.html
+        ▼
+Stamps-Steel/pemb-3d.html      →  published player (GH Pages)
+Stamps-Steel/erection.html     →  #pemb-3d iframe + “Open fullscreen”
+```
 
 ## What it shows
 
@@ -23,32 +39,16 @@ Silent multi-camera isometric-style walkthrough of a **50′ × 100′ × 20′*
 
 Aligned with MBMA-informed erection sequencing (educational schematic — not engineering drawings).
 
-## Stack
+## Files
 
-- React 19 + TypeScript + Vite  
-- TanStack Start / Router  
-- Three.js + React Three Fiber + Drei  
-- Tailwind CSS v4  
-- Zustand (timeline state)
+| Path | Purpose |
+|------|---------|
+| `index.html` / `embed.html` | Standalone Three.js player (CDN three.js) — **copy to Stamps-Steel as `pemb-3d.html` after changes** |
+| `src/components/erection/*` | Full React + R3F app (dev / Vercel) |
+| `src/lib/stages.ts` | Timeline stages |
+| `src/lib/erection-store.ts` | Playhead state |
 
-## Embed on Stamps Steel
-
-On the erection page, use an iframe pointing at this app with `?embed=1`:
-
-```html
-<iframe
-  src="https://YOUR-DEPLOY-URL/?embed=1"
-  title="Stamps Steel 3D metal building erection sequence"
-  class="w-full rounded-2xl border border-slate-700"
-  style="min-height: 560px; height: 70vh;"
-  allow="fullscreen"
-  loading="lazy"
-></iframe>
-```
-
-`?embed=1` tightens chrome for in-page embedding.
-
-## Develop
+## Develop (React app)
 
 ```bash
 npm install
@@ -57,18 +57,18 @@ npm run build
 npm run typecheck
 ```
 
-## Deploy
+## Sync player to Stamps Steel website
 
-- Prefer **Vercel** (TanStack Start + Nitro preset in `vite.config.ts`).
-- Or any Node host running the Vite/Nitro build output.
-- After deploy, paste the production URL into `Stamps-Steel/erection.html` iframe `src`.
+```bash
+# After editing index.html / embed.html in this repo:
+cp index.html ../Stamps-Steel/pemb-3d.html
+cd ../Stamps-Steel && git add pemb-3d.html && git commit -m "Sync 3D PEMB player" && git push
+```
 
-## Connection map
+## Optional: GitHub Pages on this repo
 
-| Piece | Location |
-|-------|----------|
-| 3D viewer source | this repo |
-| Marketing / SEO / quote form | `SpiderForce-Star/Stamps-Steel` → `erection.html` |
-| Embed | iframe + “Open 3D viewer” link on Erection page |
+If you enable **Settings → Pages → Deploy from branch `main` / root**, this repo can also serve  
+`https://SpiderForce-Star.github.io/Isometric-PEMB-Video-Build/` directly.  
+Until then, the live embed uses Stamps-Steel Pages (already on).
 
 © 2026 Stamps Steel Buildings · Bethpage, TN
