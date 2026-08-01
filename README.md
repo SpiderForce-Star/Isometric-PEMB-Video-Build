@@ -47,7 +47,7 @@ Aligned with MBMA-informed erection sequencing (educational schematic — not en
 | `src/components/erection/*` | Full React + R3F app (dev / Vercel) |
 | `src/lib/stages.ts` | Timeline stages |
 | `src/lib/erection-store.ts` | Playhead state |
-| `vercel.json` | Vercel build + default env (`VITE_AUTH_ENABLED=false`) |
+| `vercel.json` | Vercel build + env keys (`VITE_AUTH_*`, Neon `DATABASE_URL*`) |
 
 ## Develop (React app)
 
@@ -62,61 +62,56 @@ npm run typecheck
 
 Prefer **Vercel** (TanStack Start + Nitro preset in `vite.config.ts`).
 
-### 1. Default env (already in `vercel.json`)
+### 1. Env keys in `vercel.json`
 
-This is a **public embed** — no accounts. Defaults are checked in:
+| Variable | Default in file | Why |
+|----------|-----------------|-----|
+| `VITE_AUTH_ENABLED` | `"false"` | Public 3D embed — no sign-in |
+| `DATABASE_URL` | `""` (placeholder) | Neon **pooled** connection — set real value in Vercel / Neon integration |
+| `DATABASE_URL_UNPOOLED` | `""` (placeholder) | Neon **direct** connection — preferred for `npm run build` migrations |
 
-| Variable | Value | Why |
-|----------|-------|-----|
-| `VITE_AUTH_ENABLED` | `false` | Public 3D demo; no sign-in UI |
+Empty strings mean “unset” at runtime (app uses PGLite fallback; migrate skips).  
+**Project Settings / Neon integration override** these placeholders with real secrets.  
+**Never commit a real connection string** — Vercel encrypts secrets only when set in the dashboard.
 
-`vercel.json` sets this for **build** and **runtime** so production builds bake the flag correctly.
+### 2. Wire Neon (recommended)
 
-### 2. Optional env (Vercel → Project → Settings → Environment Variables)
+1. In Vercel: **Storage → Create / Connect → Neon** (or Neon Marketplace integration).  
+2. Confirm these appear under **Settings → Environment Variables** for Production + Preview:
 
-Add these only if you enable Neon / federated auth later. Apply to **Production**, **Preview**, and **Development** as needed.
+| Variable | Scope | Purpose |
+|----------|-------|---------|
+| `DATABASE_URL` | Runtime (+ Build) | Pooled Postgres URL — app queries |
+| `DATABASE_URL_UNPOOLED` | Runtime (+ Build) | Direct URL — deploy migrations |
+| `VITE_AUTH_ENABLED` | Build + Runtime | Keep `"false"` for public embed |
 
-| Variable | Required? | Scope | Purpose |
-|----------|-----------|-------|---------|
-| `VITE_AUTH_ENABLED` | Recommended | Build + Runtime | `"false"` for public embed; omit or `"true"` when wiring accounts |
-| `DATABASE_URL` | Optional | Runtime (+ build migrates) | Neon Postgres connection string; omit → no migrate, PGLite only in preview |
-| `BETTER_AUTH_URL` | If auth on | Runtime | Public app origin, e.g. `https://your-app.vercel.app` |
-| `BETTER_AUTH_SECRET` | If auth on | Runtime | Long random secret (`openssl rand -hex 32`) |
-| `GROK_AUTH_ISSUER` | If auth on | Runtime | Defaults to `https://auth.grok.me` if unset |
-| `GROK_AUTH_CLIENT_ID` | If auth on | Runtime | Per-app OAuth client from the auth broker |
-| `GROK_AUTH_CLIENT_SECRET` | If auth on | Runtime | Matching client secret |
-| `VITE_STUN_URLS` | Optional | Build | Comma-separated STUN URLs for multiplayer ICE (defaults exist) |
+3. Redeploy so build-time migrate can reach Neon.
 
-**Secrets never go in git.** Set them only in the Vercel dashboard (or `vercel env add` after `vercel login`).
+### 3. Optional auth secrets (only if you turn accounts on)
 
-### 3. Dashboard checklist
+| Variable | Required? | Purpose |
+|----------|-----------|---------|
+| `BETTER_AUTH_URL` | If auth on | Public origin, e.g. `https://your-app.vercel.app` |
+| `BETTER_AUTH_SECRET` | If auth on | `openssl rand -hex 32` |
+| `GROK_AUTH_ISSUER` | Optional | Defaults to `https://auth.grok.me` |
+| `GROK_AUTH_CLIENT_ID` / `GROK_AUTH_CLIENT_SECRET` | If auth on | Broker client |
+| `VITE_STUN_URLS` | Optional | Comma-separated STUN URLs |
 
-1. Import this GitHub repo into Vercel (or link an existing project).
-2. Confirm **Build Command**: `npm run build` (matches `vercel.json` / `package.json`).
-3. Confirm **Environment Variables** include at least `VITE_AUTH_ENABLED=false` (or rely on `vercel.json`).
-4. Deploy → copy the production URL.
-5. Point Stamps Steel `erection.html` iframe at:
+### 4. Dashboard checklist
 
-```html
-<iframe
-  src="https://YOUR-DEPLOY-URL/?embed=1"
-  title="Stamps Steel 3D metal building erection sequence"
-  class="w-full rounded-2xl border border-slate-700"
-  style="min-height: 560px; height: 70vh;"
-  allow="fullscreen"
-  loading="lazy"
-></iframe>
-```
+1. Import this GitHub repo into Vercel.  
+2. Build command: `npm run build`.  
+3. Connect Neon → confirm `DATABASE_URL` + `DATABASE_URL_UNPOOLED`.  
+4. Deploy → paste production URL into Stamps Steel `erection.html` iframe (`?embed=1`).
 
-### 4. CLI (optional)
+### 5. CLI (optional)
 
 ```bash
 vercel login
 vercel link
-# Only if you need secrets beyond vercel.json:
-# printf 'false' | vercel env add VITE_AUTH_ENABLED production
-# printf 'false' | vercel env add VITE_AUTH_ENABLED preview
+# Prefer Neon integration; or set secrets manually:
 # printf '%s' "$DATABASE_URL" | vercel env add DATABASE_URL production
+# printf '%s' "$DATABASE_URL_UNPOOLED" | vercel env add DATABASE_URL_UNPOOLED production
 vercel --prod
 ```
 

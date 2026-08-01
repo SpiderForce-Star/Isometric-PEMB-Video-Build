@@ -3,21 +3,29 @@
  * Deploy-time database migrator (node-postgres, `pg`).
  *
  * Runs during `npm run build` — on every Vercel deploy — applying pending files
- * in ../migrations to DATABASE_URL. Each file is applied in one transaction and
- * recorded in a `_migrations` table, so it runs once and is safe to re-run.
+ * in ../migrations to Neon. Prefer `DATABASE_URL_UNPOOLED` (direct) over the
+ * pooled `DATABASE_URL` so migrations aren't held open on a pooler connection.
+ * Each file is applied in one transaction and recorded in `_migrations`, so it
+ * runs once and is safe to re-run.
  *
- * No DATABASE_URL (local / preview builds) -> skip; the PGLite fallback applies
- * the same files at startup instead (see src/lib/db.ts).
+ * No connection string (local / preview builds) -> skip; the PGLite fallback
+ * applies the same files at startup instead (see src/lib/db.ts).
  */
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import pg from "pg";
 
-const databaseUrl = process.env.DATABASE_URL;
+// Neon on Vercel injects both; unpooled is safer for one-shot migrate scripts.
+const databaseUrl = (
+  process.env.DATABASE_URL_UNPOOLED ||
+  process.env.DATABASE_URL ||
+  ""
+).trim();
+
 if (!databaseUrl) {
   console.log(
-    "[migrate] DATABASE_URL not set — skipping (the PGLite fallback migrates itself).",
+    "[migrate] DATABASE_URL / DATABASE_URL_UNPOOLED not set — skipping (the PGLite fallback migrates itself).",
   );
   process.exit(0);
 }

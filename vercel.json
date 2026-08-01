@@ -4,11 +4,15 @@
   "installCommand": "npm install",
   "framework": null,
   "env": {
-    "VITE_AUTH_ENABLED": "false"
+    "VITE_AUTH_ENABLED": "false",
+    "DATABASE_URL": "",
+    "DATABASE_URL_UNPOOLED": ""
   },
   "build": {
     "env": {
-      "VITE_AUTH_ENABLED": "false"
+      "VITE_AUTH_ENABLED": "false",
+      "DATABASE_URL": "",
+      "DATABASE_URL_UNPOOLED": ""
     }
   }
 }
